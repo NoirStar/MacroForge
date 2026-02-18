@@ -19,6 +19,7 @@ class InputSimulator:
     def __init__(self, adb: ADBController, humanizer: Humanizer):
         self.adb = adb
         self.humanizer = humanizer
+        self.on_click = None  # 콜백: on_click(x, y)
 
     def click(self, x: int, y: int, humanize: bool = True):
         """
@@ -40,6 +41,12 @@ class InputSimulator:
             self.adb.tap(x, y)
 
         logger.info(f"클릭: ({x}, {y}) 홀드: {hold_ms}ms")
+
+        if self.on_click:
+            try:
+                self.on_click(x, y)
+            except Exception:
+                pass
 
     def click_match(self, match: MatchResult, humanize: bool = True):
         """
@@ -68,6 +75,12 @@ class InputSimulator:
             f"매칭 클릭: ({x}, {y}) "
             f"신뢰도: {match.confidence:.3f} 홀드: {hold_ms}ms"
         )
+
+        if self.on_click:
+            try:
+                self.on_click(x, y)
+            except Exception:
+                pass
 
     def click_and_wait(self, x: int, y: int, humanize: bool = True):
         """클릭 후 휴먼라이크 딜레이"""

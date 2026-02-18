@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QSplitter, QGroupBox, QPushButton, QLabel,
     QStatusBar, QFrame, QMessageBox, QFileDialog,
-    QComboBox, QSpinBox
+    QComboBox, QSpinBox, QLineEdit
 )
-from PySide6.QtCore import Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QFont, QPixmap, QImage
+from PySide6.QtCore import Qt, QTimer, Signal, Slot, QPointF
+from PySide6.QtGui import QFont, QPixmap, QImage, QPainter, QPen, QColor, QBrush
 
 import numpy as np
 import qtawesome as qta
@@ -108,6 +108,12 @@ class MainWindow(QMainWindow):
         # ── 화면 미리보기 타이머 ──
         self._preview_timer = QTimer(self)
         self._preview_timer.timeout.connect(self._update_preview)
+        self._preview_rgb = None  # numpy 데이터 참조 유지
+
+        # 클릭 시각화
+        self._click_markers = []  # [(x, y, timestamp), ...]
+        self._click_marker_duration = 2.0  # 마커 표시 시간 (초)
+        self.input_sim.on_click = self._on_input_click
 
         logger.info("MacroForge 초기화 완료")
 
@@ -139,13 +145,12 @@ class MainWindow(QMainWindow):
         top_bar_layout.addWidget(self.emu_combo)
 
         # 포트 입력 (직접 입력 모드용)
-        self.port_spin = QSpinBox()
-        self.port_spin.setRange(1, 65535)
-        self.port_spin.setValue(self.config.adb_port)
-        self.port_spin.setFixedHeight(34)
-        self.port_spin.setFixedWidth(80)
-        self.port_spin.setVisible(False)
-        top_bar_layout.addWidget(self.port_spin)
+        self.port_input = QLineEdit()
+        self.port_input.setPlaceholderText("포트 번호")
+        self.port_input.setFixedHeight(34)
+        self.port_input.setFixedWidth(90)
+        self.port_input.setVisible(False)
+        top_bar_layout.addWidget(self.port_input)
 
         # ADB 연결
         self.connect_btn = QPushButton(qta.icon('mdi.lan-connect', color='#fff'), " 연결")
@@ -677,12 +682,11 @@ class MainWindow(QMainWindow):
         """에뮬레이터 선택 변경 시 포트 자동 설정"""
         port = self.emu_combo.currentData()
         if port == -1:  # 직접 입력
-            self.port_spin.setVisible(True)
+            self.port_input.setVisible(True)
         elif port == 0:  # USB 디바이스
-            self.port_spin.setVisible(False)
+            self.port_input.setVisible(False)
         else:
-            self.port_spin.setVisible(False)
-            self.port_spin.setValue(port)
+            self.port_input.setVisible(False)
             self.adb.port = port
 
     @Slot()
@@ -695,7 +699,12 @@ class MainWindow(QMainWindow):
             # 에뮬레이터 설정 반영
             port = self.emu_combo.currentData()
             if port == -1:  # 직접 입력
-                self.adb.port = self.port_spin.value()
+                try:
+                    self.adb.port = int(self.port_input.text().strip())
+                except ValueError:
+                    QMessageBox.warning(self, "오류", "올바른 포트 번호를 입력하세요.")
+                    self.connect_btn.setEnabled(True)
+                    return
             elif port == 0:  # USB 디바이스
                 pass  # USB는 포트 불필요
             else:
@@ -866,10 +875,38 @@ class MainWindow(QMainWindow):
         if rgb is None:
             return
 
-        h, w, ch = rgb.shape
+        # numpy 데이터가 QImage 사용 중 GC되지 않도록 참조 유지
+        self._preview_rgb = rgb.copy()
+        h, w, ch = self._preview_rgb.shape
         bytes_per_line = ch * w
-        qimg = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        qimg = QImage(self._preview_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(qimg)
+
+        # 클릭 마커 그리기
+        now = time.time()
+        self._click_markers = [
+            m for m in self._click_markers
+            if now - m[2] < self._click_marker_duration
+        ]
+        if self._click_markers:
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.Antialiasing)
+            for mx, my, ts in self._click_markers:
+                age = now - ts
+                alpha = max(0, int(255 * (1.0 - age / self._click_marker_duration)))
+
+                # 외곽 원 (빨간)
+                pen = QPen(QColor(255, 80, 80, alpha), 2)
+                painter.setPen(pen)
+                painter.setBrush(QBrush(QColor(255, 80, 80, alpha // 3)))
+                radius = int(12 + age * 8)  # 시간이 지나면 커지는 원
+                painter.drawEllipse(QPointF(mx, my), radius, radius)
+
+                # 중심점
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QBrush(QColor(255, 255, 0, alpha)))
+                painter.drawEllipse(QPointF(mx, my), 3, 3)
+            painter.end()
 
         # 미리보기 영역에 맞게 스케일
         scaled = pixmap.scaled(
@@ -878,6 +915,10 @@ class MainWindow(QMainWindow):
             Qt.SmoothTransformation
         )
         self.preview_label.setPixmap(scaled)
+
+    def _on_input_click(self, x: int, y: int):
+        """InputSimulator에서 클릭 발생 시 미리보기에 마커 추가"""
+        self._click_markers.append((x, y, time.time()))
 
     @Slot()
     def _save_screenshot(self):
