@@ -93,6 +93,7 @@ class MainWindow(QMainWindow):
 
         # 엔진 콜백
         self.engine.on_state_changed = self._on_engine_state_changed
+        self._queue_running = False
 
         # ── UI 구성 ──
         self._setup_ui()
@@ -484,6 +485,10 @@ class MainWindow(QMainWindow):
                 border: none;
                 padding-right: 6px;
             }
+            QComboBox QFrame {
+                background-color: #252830;
+                border: 1px solid #363A45;
+            }
             QComboBox QAbstractItemView {
                 background-color: #252830;
                 color: #E0E0E0;
@@ -642,11 +647,11 @@ class MainWindow(QMainWindow):
                 font-size: 11px;
             }
 
-            /* ── 메시지 박스 ── */
-            QMessageBox {
+            /* ── 다이얼로그 ── */
+            QMessageBox, QDialog, QInputDialog {
                 background-color: #1E2028;
             }
-            QMessageBox QLabel {
+            QMessageBox QLabel, QDialog QLabel {
                 color: #E0E0E0;
             }
 
@@ -804,6 +809,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def _on_stop(self):
         """매크로 정지"""
+        if self._queue_running:
+            self._on_queue_stop()
+            return
         if self.engine.is_running:
             self.engine.stop()
         self.start_btn.setEnabled(True)
@@ -817,6 +825,9 @@ class MainWindow(QMainWindow):
     def _on_engine_state_changed(self, old_state, new_state):
         """엔진 상태 변경 시"""
         if new_state in (MacroState.STOPPED, MacroState.ERROR):
+            # 큐 실행 중에는 개별 매크로 종료로 UI 리셋하지 않음
+            if self._queue_running:
+                return
             # UI 스레드에서 안전하게 처리하기 위해 타이머 사용
             QTimer.singleShot(0, self._on_stop)
 
@@ -898,6 +909,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "알림", "ADB가 연결되어 있지 않습니다.")
             return
 
+        self._queue_running = True
         self.macro_queue.set_running(True, 0)
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
@@ -924,6 +936,7 @@ class MainWindow(QMainWindow):
 
     def _on_queue_done(self):
         """매크로 큐 완료 처리"""
+        self._queue_running = False
         self.macro_queue.set_running(False)
         self.start_btn.setEnabled(True)
         self.pause_btn.setEnabled(False)

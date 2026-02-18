@@ -123,4 +123,4 @@ class ScriptMacro(BaseMacro):
             self._step_idx += 1
 
     def teardown(self):
-        logger.info(f"📜 스크립트 종료: {self.name}")
+        logger.info(f"스크립트 종료: {self.name}")
