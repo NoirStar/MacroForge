@@ -33,6 +33,7 @@ class MacroEngine:
         self._current_macro: Optional[BaseMacro] = None
         self._thread: Optional[threading.Thread] = None
         self._registered_macros: dict[str, Type[BaseMacro]] = {}
+        self._queue_stop: bool = False
 
         # 콜백
         self.on_macro_started = None
@@ -168,10 +169,108 @@ class MacroEngine:
             daemon=True,
         )
         self._thread.start()
-        logger.info(f"🚀 스크립트 매크로 시작: {script.name}")
+        logger.info(f"스크립트 매크로 시작: {script.name}")
 
         if self.on_macro_started:
             self.on_macro_started(macro)
+
+    # ── 큐 실행 ──
+
+    def start_queue(self, queue_items: list, total_repeats: int = 1,
+                    on_progress=None, on_queue_done=None):
+        """
+        매크로 큐 순차 실행
+
+        Args:
+            queue_items: [{"name": str, "path": str, "repeats": int}, ...]
+            total_repeats: 큐 전체 반복 횟수
+            on_progress: 콜백(index, repeat_current, repeat_total)
+            on_queue_done: 큐 완료 콜백
+        """
+        if self.is_running:
+            self.stop()
+            time.sleep(0.5)
+
+        self._queue_stop = False
+        self._thread = threading.Thread(
+            target=self._run_queue,
+            args=(queue_items, total_repeats, on_progress, on_queue_done),
+            name="MacroQueue",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def _run_queue(self, queue_items, total_repeats, on_progress, on_queue_done):
+        """큐 실행 스레드"""
+        from src.macros.script_macro import ScriptMacro
+        from src.macros.macro_step import MacroScript
+
+        logger.info(f"매크로 큐 시작: {len(queue_items)}개 매크로, {total_repeats}회 반복")
+
+        for queue_round in range(total_repeats):
+            if self._queue_stop:
+                break
+
+            if total_repeats > 1:
+                logger.info(f"큐 반복 {queue_round + 1}/{total_repeats}")
+
+            for idx, item in enumerate(queue_items):
+                if self._queue_stop:
+                    break
+
+                try:
+                    script = MacroScript.load(item["path"])
+                except Exception as e:
+                    logger.error(f"매크로 로드 실패: {item['name']} - {e}")
+                    continue
+
+                repeats = item.get("repeats", 1)
+
+                for rep in range(repeats):
+                    if self._queue_stop:
+                        break
+
+                    if on_progress:
+                        on_progress(idx, rep + 1, repeats)
+
+                    logger.info(
+                        f"큐 [{idx + 1}/{len(queue_items)}] "
+                        f"{script.name} ({rep + 1}/{repeats})"
+                    )
+
+                    macro = ScriptMacro(
+                        script=script,
+                        adb=self.adb,
+                        screen=self.screen,
+                        matcher=self.matcher,
+                        input_sim=self.input_sim,
+                        humanizer=self.humanizer,
+                    )
+                    macro.set_callbacks(on_state_change=self._on_macro_state_change)
+                    self._current_macro = macro
+                    self.humanizer.reset_session()
+
+                    try:
+                        macro.run()
+                    except Exception as e:
+                        logger.error(f"큐 매크로 실행 오류: {e}")
+
+                    # 매크로 간 짧은 대기
+                    if not self._queue_stop:
+                        time.sleep(1.0)
+
+        self._current_macro = None
+        logger.info("매크로 큐 완료")
+
+        if on_queue_done:
+            on_queue_done()
+
+    def stop_queue(self):
+        """큐 실행 중지"""
+        self._queue_stop = True
+        if self._current_macro and self._current_macro.state in (MacroState.RUNNING, MacroState.PAUSED):
+            self._current_macro.stop()
+        logger.info("매크로 큐 중지 요청")
 
     def _on_macro_state_change(self, old_state: MacroState, new_state: MacroState):
         """매크로 상태 변경 콜백"""

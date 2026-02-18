@@ -32,6 +32,7 @@ from src.utils.logger import get_logger, setup_logging
 from src.ui.log_widget import LogWidget
 from src.ui.macro_builder import MacroBuilderWidget
 from src.ui.background_panel import BackgroundActionWidget
+from src.ui.macro_queue import MacroQueueWidget
 
 logger = get_logger(__name__)
 
@@ -247,6 +248,12 @@ class MainWindow(QMainWindow):
         self.bg_panel.start_requested.connect(self._on_bg_start)
         self.bg_panel.stop_requested.connect(self._on_bg_stop)
         self.left_tabs.addTab(self.bg_panel, qta.icon('mdi.sync', color='#81C784'), "백그라운드 액션")
+
+        # 탭 3: 매크로 큐
+        self.macro_queue = MacroQueueWidget()
+        self.macro_queue.queue_start_requested.connect(self._on_queue_start)
+        self.macro_queue.queue_stop_requested.connect(self._on_queue_stop)
+        self.left_tabs.addTab(self.macro_queue, qta.icon('mdi.playlist-play', color='#FFB74D'), "매크로 큐")
 
         left_layout.addWidget(self.left_tabs, 3)
 
@@ -874,6 +881,50 @@ class MainWindow(QMainWindow):
             logger.info(f"스크린샷 저장: {path}")
             self.statusBar().showMessage(f"스크린샷 저장됨: {path}")
 
+    # ── 매크로 큐 제어 ──
+
+    @Slot(list)
+    def _on_queue_start(self, queue_items: list):
+        """매크로 큐 실행"""
+        if not self.adb.is_connected:
+            QMessageBox.warning(self, "알림", "ADB가 연결되어 있지 않습니다.")
+            return
+
+        self.macro_queue.set_running(True, 0)
+        self.start_btn.setEnabled(False)
+        self.stop_btn.setEnabled(True)
+        self.pause_btn.setEnabled(True)
+        self.state_label.setText("● 큐 실행 중")
+        self.state_label.setStyleSheet("color: #22C55E; font-weight: bold; font-size: 13px;")
+
+        total = self.macro_queue.total_repeats
+
+        def on_progress(index, rep_cur, rep_total):
+            QTimer.singleShot(0, lambda i=index, rc=rep_cur, rt=rep_total:
+                              self.macro_queue.update_progress(i, rc, rt))
+
+        def on_done():
+            QTimer.singleShot(0, self._on_queue_done)
+
+        self.engine.start_queue(queue_items, total, on_progress, on_done)
+
+    @Slot()
+    def _on_queue_stop(self):
+        """매크로 큐 정지"""
+        self.engine.stop_queue()
+        self._on_queue_done()
+
+    def _on_queue_done(self):
+        """매크로 큐 완료 처리"""
+        self.macro_queue.set_running(False)
+        self.start_btn.setEnabled(True)
+        self.pause_btn.setEnabled(False)
+        self.pause_btn.setIcon(qta.icon('mdi.pause', color='#FFC107'))
+        self.pause_btn.setText(" 일시정지")
+        self.stop_btn.setEnabled(False)
+        self.state_label.setText("● 대기")
+        self.state_label.setStyleSheet("color: #666; font-weight: bold; font-size: 13px;")
+
     # ── 백그라운드 워커 제어 ──
 
     @Slot()
@@ -906,6 +957,7 @@ class MainWindow(QMainWindow):
             self.bg_worker.stop()
         if self.engine.is_running:
             self.engine.stop()
+        self.engine.stop_queue()
         if self.adb.is_connected:
             self.adb.disconnect()
         self._preview_timer.stop()
