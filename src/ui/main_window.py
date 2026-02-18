@@ -8,7 +8,8 @@ from typing import Optional, Type
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QSplitter, QGroupBox, QPushButton, QLabel,
-    QStatusBar, QFrame, QMessageBox, QFileDialog
+    QStatusBar, QFrame, QMessageBox, QFileDialog,
+    QComboBox, QSpinBox
 )
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QFont, QPixmap, QImage
@@ -121,6 +122,28 @@ class MainWindow(QMainWindow):
         top_bar_layout = QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(16, 10, 16, 10)
         top_bar_layout.setSpacing(12)
+
+        # 에뮬레이터 선택
+        self.emu_combo = QComboBox()
+        self.emu_combo.setFixedHeight(34)
+        self.emu_combo.setFixedWidth(145)
+        self.emu_combo.addItem(qta.icon('mdi.cellphone-link', color='#64B5F6'), "BlueStacks", 5555)
+        self.emu_combo.addItem(qta.icon('mdi.cellphone-link', color='#81C784'), "LDPlayer", 5555)
+        self.emu_combo.addItem(qta.icon('mdi.cellphone-link', color='#FFB74D'), "Nox Player", 62001)
+        self.emu_combo.addItem(qta.icon('mdi.cellphone-link', color='#CE93D8'), "MuMu Player", 7555)
+        self.emu_combo.addItem(qta.icon('mdi.usb', color='#4FC3F7'), "USB 디바이스", 0)
+        self.emu_combo.addItem(qta.icon('mdi.cog', color='#888'), "직접 입력", -1)
+        self.emu_combo.currentIndexChanged.connect(self._on_emu_changed)
+        top_bar_layout.addWidget(self.emu_combo)
+
+        # 포트 입력 (직접 입력 모드용)
+        self.port_spin = QSpinBox()
+        self.port_spin.setRange(1, 65535)
+        self.port_spin.setValue(self.config.adb_port)
+        self.port_spin.setFixedHeight(34)
+        self.port_spin.setFixedWidth(80)
+        self.port_spin.setVisible(False)
+        top_bar_layout.addWidget(self.port_spin)
 
         # ADB 연결
         self.connect_btn = QPushButton(qta.icon('mdi.lan-connect', color='#fff'), " 연결")
@@ -629,6 +652,19 @@ class MainWindow(QMainWindow):
 
     # ── 이벤트 핸들러 ──
 
+    @Slot(int)
+    def _on_emu_changed(self, index: int):
+        """에뮬레이터 선택 변경 시 포트 자동 설정"""
+        port = self.emu_combo.currentData()
+        if port == -1:  # 직접 입력
+            self.port_spin.setVisible(True)
+        elif port == 0:  # USB 디바이스
+            self.port_spin.setVisible(False)
+        else:
+            self.port_spin.setVisible(False)
+            self.port_spin.setValue(port)
+            self.adb.port = port
+
     @Slot()
     def _on_connect(self):
         """ADB 연결/해제"""
@@ -636,6 +672,15 @@ class MainWindow(QMainWindow):
             self.adb.disconnect()
             self._update_connection_ui(False)
         else:
+            # 에뮬레이터 설정 반영
+            port = self.emu_combo.currentData()
+            if port == -1:  # 직접 입력
+                self.adb.port = self.port_spin.value()
+            elif port == 0:  # USB 디바이스
+                pass  # USB는 포트 불필요
+            else:
+                self.adb.port = port
+
             self.statusBar().showMessage("ADB 연결 중...")
             self.connect_btn.setEnabled(False)
 

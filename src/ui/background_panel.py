@@ -89,17 +89,18 @@ class ActionEditorPanel(QScrollArea):
         # ── 키 입력 관련 ──
         self._add_section("키 설정")
 
-        # 키코드 프리셋
+        # 키코드 프리셋 (모든 키 포함)
         self.key_preset_combo = QComboBox()
-        self.key_preset_combo.addItem("직접 입력", -1)
         for label, code in KEYCODE_PRESETS.items():
-            self.key_preset_combo.addItem(f"{label} ({code})", code)
-        self.key_preset_combo.setCurrentIndex(1)  # 기본: 스페이스바
-        self._add_field_row("key_preset", "키 프리셋:", self.key_preset_combo)
+            self.key_preset_combo.addItem(f"{label}", code)
+        self.key_preset_combo.setCurrentIndex(0)  # 기본: 스페이스바
+        self.key_preset_combo.setMaxVisibleItems(20)
+        self._add_field_row("key_preset", "키 선택:", self.key_preset_combo)
 
         self.keycode_spin = QSpinBox()
         self.keycode_spin.setRange(0, 999)
         self.keycode_spin.setValue(62)
+        self.keycode_spin.setVisible(False)  # 숨김 — 프리셋만 사용
         self._add_field_row("keycode", "키코드:", self.keycode_spin)
 
         # ── 좌표 관련 ──
@@ -211,12 +212,9 @@ class ActionEditorPanel(QScrollArea):
         if self._updating:
             return
         code = self.key_preset_combo.currentData()
-        if code != -1:
-            self._updating = True
-            self.keycode_spin.setValue(code)
-            self._updating = False
-        # 직접 입력 시 keycode spin 수동 편집
-        self._rows["keycode"].setVisible(code == -1)
+        self._updating = True
+        self.keycode_spin.setValue(code)
+        self._updating = False
         self._emit()
 
     def _set_enabled(self, enabled: bool):
@@ -230,12 +228,7 @@ class ActionEditorPanel(QScrollArea):
         needs_image = at in (ActionType.IMAGE_KEY, ActionType.IMAGE_TAP)
 
         self._rows["key_preset"].setVisible(needs_key)
-        # 직접 입력 모드일때만 키코드 표시
-        if needs_key:
-            code = self.key_preset_combo.currentData()
-            self._rows["keycode"].setVisible(code == -1)
-        else:
-            self._rows["keycode"].setVisible(False)
+        self._rows["keycode"].setVisible(False)  # 숨김 — 프리셋만 사용
 
         self._rows["coords"].setVisible(needs_coord)
         self._rows["template"].setVisible(needs_image)
@@ -272,7 +265,7 @@ class ActionEditorPanel(QScrollArea):
                 preset_found = True
                 break
         if not preset_found:
-            self.key_preset_combo.setCurrentIndex(0)  # 직접 입력
+            self.key_preset_combo.setCurrentIndex(0)  # 첫 번째 키
 
         self._update_visibility(action.type)
         self._updating = False
@@ -284,7 +277,6 @@ class ActionEditorPanel(QScrollArea):
         a.type = ActionType(self.type_combo.currentData())
         a.name = self.name_input.text()
         a.enabled = self.enabled_check.isChecked()
-        a.keycode = self.keycode_spin.value()
         a.x = self.x_spin.value()
         a.y = self.y_spin.value()
         a.template_path = self.template_input.text()
@@ -293,11 +285,8 @@ class ActionEditorPanel(QScrollArea):
         a.interval_jitter = self.jitter_spin.value()
 
         # 키코드 라벨 업데이트
-        preset_idx = self.key_preset_combo.currentIndex()
-        if preset_idx > 0:
-            a.keycode_label = self.key_preset_combo.currentText().split(" (")[0]
-        else:
-            a.keycode_label = f"키코드 {a.keycode}"
+        a.keycode = self.key_preset_combo.currentData()
+        a.keycode_label = self.key_preset_combo.currentText()
 
     def clear(self):
         self._action = None
