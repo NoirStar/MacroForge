@@ -30,18 +30,18 @@ class ScriptMacro(BaseMacro):
         self._retry_count = 0
         if not self.script.steps:
             raise ValueError("스텝이 없습니다")
-        logger.info(f"📜 스크립트 시작: {self.name} ({len(self.script.steps)}스텝)")
+        logger.info(f"스크립트 시작: {self.name} ({len(self.script.steps)}스텝)")
 
     def loop(self):
         if self._step_idx >= len(self.script.steps):
             self._step_idx = 0
             self._retry_count = 0
-            logger.info("🔄 처음부터 반복")
+            logger.info("처음부터 반복")
             return
 
         step = self.script.steps[self._step_idx]
         logger.info(
-            f"▶ [{self._step_idx + 1}/{len(self.script.steps)}] {step.name}"
+            f"[{self._step_idx + 1}/{len(self.script.steps)}] {step.name}"
         )
 
         success = self._exec(step)
@@ -90,7 +90,7 @@ class ScriptMacro(BaseMacro):
             self._retry_count = 0
 
         elif action == "stop":
-            logger.info("⏹ 매크로 정지 (스텝 설정)")
+            logger.info("매크로 정지 (스텝 설정)")
             self.stop()
 
         elif action == "retry":
@@ -108,7 +108,7 @@ class ScriptMacro(BaseMacro):
         elif action == "loop":
             self._step_idx = 0
             self._retry_count = 0
-            logger.info("🔄 루프 → 처음으로")
+            logger.info("루프 → 처음으로")
 
         elif action.startswith("goto:"):
             try:

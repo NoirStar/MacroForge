@@ -491,6 +491,14 @@ class MainWindow(QMainWindow):
                 selection-background-color: #2563EB;
                 outline: none;
             }
+            QComboBox QAbstractItemView::item {
+                padding: 4px 8px;
+                min-height: 22px;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #2563EB;
+                color: #FFFFFF;
+            }
 
             /* ── 그룹박스 ── */
             QGroupBox {

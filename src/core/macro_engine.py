@@ -81,7 +81,7 @@ class MacroEngine:
             daemon=True
         )
         self._thread.start()
-        logger.info(f"🚀 매크로 시작: {self._current_macro.name}")
+        logger.info(f"매크로 시작: {self._current_macro.name}")
 
         if self.on_macro_started:
             self.on_macro_started(self._current_macro)
@@ -102,7 +102,7 @@ class MacroEngine:
         """매크로 중지"""
         if self._current_macro and self._current_macro.state in (MacroState.RUNNING, MacroState.PAUSED):
             self._current_macro.stop()
-            logger.info(f"⏹️ 매크로 중지 요청: {self._current_macro.name}")
+            logger.info(f"매크로 중지 요청: {self._current_macro.name}")
 
             # 스레드 종료 대기
             if self._thread and self._thread.is_alive():
@@ -112,13 +112,13 @@ class MacroEngine:
         """매크로 일시정지"""
         if self._current_macro and self._current_macro.state == MacroState.RUNNING:
             self._current_macro.pause()
-            logger.info(f"⏸️ 매크로 일시정지: {self._current_macro.name}")
+            logger.info(f"매크로 일시정지: {self._current_macro.name}")
 
     def resume(self):
         """매크로 재개"""
         if self._current_macro and self._current_macro.state == MacroState.PAUSED:
             self._current_macro.resume()
-            logger.info(f"▶️ 매크로 재개: {self._current_macro.name}")
+            logger.info(f"매크로 재개: {self._current_macro.name}")
 
     def toggle_pause(self):
         """일시정지 토글"""

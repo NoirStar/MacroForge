@@ -135,7 +135,7 @@ class ImageMatcher:
                 top_left=loc
             )
             logger.info(
-                f"✅ 매칭 발견: {os.path.basename(template_path)} "
+                f"매칭 발견: {os.path.basename(template_path)} "
                 f"@ ({center_x}, {center_y}) 신뢰도: {confidence:.3f}"
             )
             return match
@@ -149,7 +149,7 @@ class ImageMatcher:
                 return ms_result
 
         logger.debug(
-            f"❌ 매칭 실패: {os.path.basename(template_path)} "
+            f"매칭 실패: {os.path.basename(template_path)} "
             f"최고 신뢰도: {confidence:.3f} < {threshold}"
         )
         return None
@@ -199,7 +199,7 @@ class ImageMatcher:
 
         if best_match:
             logger.info(
-                f"✅ 멀티스케일 매칭: {os.path.basename(template_path)} "
+                f"멀티스케일 매칭: {os.path.basename(template_path)} "
                 f"@ ({best_match.x}, {best_match.y}) 신뢰도: {best_match.confidence:.3f}"
             )
         return best_match

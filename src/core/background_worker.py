@@ -101,7 +101,7 @@ class BackgroundWorker:
             daemon=True,
         )
         self._thread.start()
-        logger.info(f"🔄 백그라운드 워커 시작 (활성 액션: {enabled_count}개)")
+        logger.info(f"백그라운드 워커 시작 (활성 액션: {enabled_count}개)")
 
         if self.on_started:
             self.on_started()
@@ -115,7 +115,7 @@ class BackgroundWorker:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5)
 
-        logger.info("⏹️ 백그라운드 워커 정지")
+        logger.info("백그라운드 워커 정지")
 
         if self.on_stopped:
             self.on_stopped()
@@ -123,12 +123,12 @@ class BackgroundWorker:
     def pause(self):
         """일시 정지"""
         self._paused = True
-        logger.info("⏸️ 백그라운드 워커 일시정지")
+        logger.info("백그라운드 워커 일시정지")
 
     def resume(self):
         """재개"""
         self._paused = False
-        logger.info("▶️ 백그라운드 워커 재개")
+        logger.info("백그라운드 워커 재개")
 
     def toggle_pause(self):
         if self._paused:
@@ -194,12 +194,12 @@ class BackgroundWorker:
     def _exec_key_press(self, action: BackgroundAction):
         """주기적 키 입력"""
         self.adb.key_event(action.keycode)
-        logger.debug(f"🔄 [BG] 키 입력: {action.keycode_label} (키코드 {action.keycode})")
+        logger.debug(f"[BG] 키 입력: {action.keycode_label} (키코드 {action.keycode})")
 
     def _exec_tap_coord(self, action: BackgroundAction):
         """주기적 좌표 탭"""
         self.input_sim.click(action.x, action.y, humanize=True)
-        logger.debug(f"🔄 [BG] 좌표 탭: ({action.x}, {action.y})")
+        logger.debug(f"[BG] 좌표 탭: ({action.x}, {action.y})")
 
     def _exec_image_key(self, action: BackgroundAction):
         """이미지 감지 시 키 입력"""
@@ -214,7 +214,7 @@ class BackgroundWorker:
         if match:
             self.adb.key_event(action.keycode)
             logger.debug(
-                f"🔄 [BG] 이미지 감지→키 입력: {action.keycode_label} "
+                f"[BG] 이미지 감지→키 입력: {action.keycode_label} "
                 f"(신뢰도 {match.confidence:.3f})"
             )
 
@@ -231,6 +231,6 @@ class BackgroundWorker:
         if match:
             self.input_sim.click_match(match, humanize=True)
             logger.debug(
-                f"🔄 [BG] 이미지 감지→탭: ({match.x}, {match.y}) "
+                f"[BG] 이미지 감지→탭: ({match.x}, {match.y}) "
                 f"(신뢰도 {match.confidence:.3f})"
             )

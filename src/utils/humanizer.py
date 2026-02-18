@@ -88,7 +88,7 @@ class Humanizer:
         # 가끔 긴 정지 (딴 짓하는 척)
         if random.random() < self.long_pause_chance:
             delay = random.uniform(self.long_pause_min, self.long_pause_max)
-            logger.debug(f"⏸️ 긴 정지 삽입: {delay:.2f}s")
+            logger.debug(f"긴 정지 삽입: {delay:.2f}s")
             return delay
 
         # 기본 딜레이 (로그정규분포 - 사람 반응시간과 유사)
@@ -136,7 +136,7 @@ class Humanizer:
         # 마이크로 정지 체크
         if self.should_micro_pause():
             pause = self.get_micro_pause_duration()
-            logger.info(f"🧘 마이크로 정지: {pause:.1f}s")
+            logger.info(f"마이크로 정지: {pause:.1f}s")
             time.sleep(pause)
 
         delay = self.get_click_delay()

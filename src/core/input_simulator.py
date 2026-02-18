@@ -39,7 +39,7 @@ class InputSimulator:
         else:
             self.adb.tap(x, y)
 
-        logger.info(f"🖱️ 클릭: ({x}, {y}) 홀드: {hold_ms}ms")
+        logger.info(f"클릭: ({x}, {y}) 홀드: {hold_ms}ms")
 
     def click_match(self, match: MatchResult, humanize: bool = True):
         """
@@ -65,7 +65,7 @@ class InputSimulator:
             self.adb.tap(x, y)
 
         logger.info(
-            f"🖱️ 매칭 클릭: ({x}, {y}) "
+            f"매칭 클릭: ({x}, {y}) "
             f"신뢰도: {match.confidence:.3f} 홀드: {hold_ms}ms"
         )
 
@@ -90,7 +90,7 @@ class InputSimulator:
             duration_ms = int(duration_ms * random.uniform(0.85, 1.15))
 
         self.adb.swipe(x1, y1, x2, y2, duration_ms)
-        logger.info(f"👆 스와이프: ({x1},{y1}) -> ({x2},{y2}) {duration_ms}ms")
+        logger.info(f"스와이프: ({x1},{y1}) -> ({x2},{y2}) {duration_ms}ms")
 
     def long_press(self, x: int, y: int, duration_ms: int = 1000,
                    humanize: bool = True):
@@ -101,4 +101,4 @@ class InputSimulator:
             duration_ms = int(duration_ms * random.uniform(0.9, 1.1))
 
         self.adb.long_press(x, y, duration_ms)
-        logger.info(f"👇 롱프레스: ({x}, {y}) {duration_ms}ms")
+        logger.info(f"롱프레스: ({x}, {y}) {duration_ms}ms")

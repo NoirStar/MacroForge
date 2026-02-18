@@ -81,7 +81,7 @@ class ADBController:
         for path in self.BLUESTACKS_PATHS:
             if os.path.isfile(path):
                 logger.warning(
-                    f"⚠️ 블루스택 HD-Adb 사용 - input 명령이 동작하지 않을 수 있습니다: {path}"
+                    f"블루스택 HD-Adb 사용 - input 명령이 동작하지 않을 수 있습니다: {path}"
                 )
                 return path
 
@@ -107,7 +107,7 @@ class ADBController:
             zip_path.unlink(missing_ok=True)
 
             if self.LOCAL_ADB_PATH.is_file():
-                logger.info(f"✅ 표준 ADB 설치 완료: {self.LOCAL_ADB_PATH}")
+                logger.info(f"표준 ADB 설치 완료: {self.LOCAL_ADB_PATH}")
                 return str(self.LOCAL_ADB_PATH)
             else:
                 logger.error("압축 해제 후 adb.exe를 찾을 수 없습니다")
@@ -188,7 +188,7 @@ class ADBController:
             self._device_serial = target
             self._connected = True
             self._fetch_screen_size()
-            logger.info(f"✅ ADB 연결 성공: {target}")
+            logger.info(f"ADB 연결 성공: {target}")
             return True
 
         # 이미 연결된 디바이스 확인
@@ -197,10 +197,10 @@ class ADBController:
             self._device_serial = devices[0]
             self._connected = True
             self._fetch_screen_size()
-            logger.info(f"✅ 기존 디바이스 사용: {self._device_serial}")
+            logger.info(f"기존 디바이스 사용: {self._device_serial}")
             return True
 
-        logger.error("❌ ADB 연결 실패")
+        logger.error("ADB 연결 실패")
         self._connected = False
         return False
 
@@ -261,12 +261,12 @@ class ADBController:
                     self._coord_scale = (sx, sy)
                     if abs(sx - 1.0) > 0.01 or abs(sy - 1.0) > 0.01:
                         logger.warning(
-                            f"⚠️ 좌표 스케일 감지: "
+                            f"좌표 스케일 감지: "
                             f"스크린샷({ss_w}x{ss_h}) ≠ wm size({wm_w}x{wm_h}) "
                             f"→ 스케일 ({sx:.3f}, {sy:.3f})"
                         )
                     else:
-                        logger.info("✅ 좌표 스케일: 1:1 (스케일링 불필요)")
+                        logger.info("좌표 스케일: 1:1 (스케일링 불필요)")
         except Exception as e:
             logger.warning(f"좌표 캘리브레이션 실패: {e}")
 
