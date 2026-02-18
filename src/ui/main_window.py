@@ -650,11 +650,21 @@ class MainWindow(QMainWindow):
             }
 
             /* ── 다이얼로그 ── */
-            QMessageBox, QDialog, QInputDialog {
+            QMessageBox, QDialog, QInputDialog, QFileDialog {
                 background-color: #1E2028;
             }
-            QMessageBox QLabel, QDialog QLabel {
+            QMessageBox *, QDialog *, QInputDialog * {
+                background-color: #1E2028;
                 color: #E0E0E0;
+            }
+            QMessageBox QPushButton, QDialog QPushButton, QInputDialog QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                min-width: 70px;
+                padding: 6px 16px;
+            }
+            QMessageBox QPushButton:hover, QDialog QPushButton:hover {
+                background-color: #3B82F6;
             }
 
             /* ── 툴팁 ── */
