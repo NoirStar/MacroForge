@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
         # ── UI 구성 ──
         self._setup_ui()
         self._apply_dark_theme()
+        self._fix_combo_popups()
         self._register_macros()
 
         # ── 상태 업데이트 타이머 ──
@@ -490,10 +491,6 @@ class MainWindow(QMainWindow):
                 border: none;
                 padding-right: 6px;
             }
-            QComboBox QFrame {
-                background-color: #252830;
-                border: 1px solid #363A45;
-            }
             QComboBox QAbstractItemView {
                 background-color: #252830;
                 color: #E0E0E0;
@@ -670,6 +667,41 @@ class MainWindow(QMainWindow):
                 font-size: 11px;
             }
         """)
+
+    def _fix_combo_popups(self):
+        """Windows에서 QComboBox 팝업 투명 문제 해결
+        
+        Qt가 콤보박스 팝업을 top-level 윈도우로 만들 때
+        WA_TranslucentBackground가 적용되어 투명해지는 문제를
+        팝업 컨테이너에 직접 배경색을 지정하여 해결
+        """
+        for combo in self.findChildren(QComboBox):
+            view = combo.view()
+            if view:
+                container = view.parentWidget()
+                if container:
+                    container.setStyleSheet(
+                        "background-color: #252830;"
+                        "border: 1px solid #363A45;"
+                        "border-radius: 4px;"
+                    )
+                view.setStyleSheet(
+                    "QAbstractItemView {"
+                    "  background-color: #252830;"
+                    "  color: #E0E0E0;"
+                    "  border: none;"
+                    "  outline: none;"
+                    "  selection-background-color: #2563EB;"
+                    "}"
+                    "QAbstractItemView::item {"
+                    "  padding: 4px 8px;"
+                    "  min-height: 22px;"
+                    "}"
+                    "QAbstractItemView::item:hover {"
+                    "  background-color: #2563EB;"
+                    "  color: #FFFFFF;"
+                    "}"
+                )
 
     def _register_macros(self):
         """매크로 등록"""
