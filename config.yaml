@@ -1,0 +1,58 @@
+# MacroForge 매크로 설정
+app:
+  name: "MacroForge"
+  version: "1.0.0"
+
+# ADB 설정
+adb:
+  # ADB 경로 (auto = 자동 감지, 시스템 ADB 우선 사용)
+  adb_path: "auto"
+  # ADB 연결 포트 (블루스택: 5555, LDPlayer: 5555, Nox: 62001, MuMu: 7555)
+  host: "127.0.0.1"
+  port: 5555
+  # 연결 타임아웃 (초)
+  timeout: 10
+
+# 이미지 매칭 설정
+image_matching:
+  # 매칭 신뢰도 임계값 (0.0 ~ 1.0)
+  confidence_threshold: 0.85
+  # 매칭 방법: TM_CCOEFF_NORMED, TM_CCORR_NORMED, TM_SQDIFF_NORMED
+  method: "TM_CCOEFF_NORMED"
+  # 그레이스케일 변환 후 매칭 (성능 향상)
+  use_grayscale: true
+
+# 휴먼라이크 설정 (매크로 탐지 회피)
+humanizer:
+  # 클릭 좌표 랜덤 오프셋 (픽셀)
+  click_offset_range: 5
+  # 클릭 간 최소/최대 딜레이 (초)
+  min_delay: 0.3
+  max_delay: 1.2
+  # 클릭 홀드 시간 범위 (밀리초)
+  min_hold_ms: 50
+  max_hold_ms: 150
+  # 가끔 더 긴 딜레이 삽입 확률 (0.0 ~ 1.0)
+  long_pause_chance: 0.08
+  long_pause_min: 2.0
+  long_pause_max: 5.0
+  # 미세한 좌표 흔들림 활성화
+  enable_jitter: true
+
+# 로깅 설정
+logging:
+  level: "DEBUG"
+  # 콘솔 로그 레벨 (DEBUG 로그는 파일에만 기록)
+  console_level: "INFO"
+  # 로그 파일 보관 일수
+  retention_days: 7
+  # 콘솔 출력 (UI 로그 위젯 사용 시 불필요)
+  console_output: false
+  # 파일 출력
+  file_output: true
+  log_dir: "logs"
+
+# 스크린샷 설정
+screenshot:
+  # 캐시 유효 시간 (밀리초) - 같은 프레임 재사용
+  cache_ttl_ms: 100

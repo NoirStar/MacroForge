@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# 로그
+logs/
+
+# 다운로드된 ADB
+tools/
+
+# 사용자 데이터 (개인 매크로/템플릿)
+saved_macros/
+assets/templates/*.png
+assets/templates/*.jpg
+assets/templates/party_quest/
+!assets/templates/README.md
+
+# 기타
+test_screenshot.png
+capture_templates.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
