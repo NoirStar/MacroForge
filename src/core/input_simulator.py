@@ -3,6 +3,7 @@ Input Simulator - ADB 기반 사람같은 입력 처리
 Humanizer와 ADB를 결합하여 자연스러운 입력 수행
 """
 
+import time
 from typing import Optional, Tuple
 
 from src.core.adb_controller import ADBController
@@ -21,26 +22,29 @@ class InputSimulator:
         self.humanizer = humanizer
         self.on_click = None  # 콜백: on_click(x, y)
 
-    def click(self, x: int, y: int, humanize: bool = True):
+    def click(self, x: int, y: int, humanize: bool = True, tap_count: int = 2):
         """
-        단일 클릭 (휴먼라이크)
+        클릭 (휴먼라이크, 기본 더블탭)
 
         Args:
             x, y: 클릭 좌표
             humanize: 좌표 랜덤화 활성화
+            tap_count: 탭 횟수 (기본 2회 - 인식률 향상)
         """
         if humanize:
             x, y = self.humanizer.humanize_coords(x, y)
 
         hold_ms = self.humanizer.get_hold_duration_ms()
 
-        if hold_ms > 80:
-            # 살짝 길게 누르는 느낌으로 swipe 사용
-            self.adb.swipe(x, y, x, y, hold_ms)
-        else:
-            self.adb.tap(x, y)
+        for i in range(tap_count):
+            if hold_ms > 80:
+                self.adb.swipe(x, y, x, y, hold_ms)
+            else:
+                self.adb.tap(x, y)
+            if i < tap_count - 1:
+                time.sleep(0.03)  # 탭 사이 30ms 간격
 
-        logger.info(f"클릭: ({x}, {y}) 홀드: {hold_ms}ms")
+        logger.info(f"클릭: ({x}, {y}) x{tap_count} 홀드: {hold_ms}ms")
 
         if self.on_click:
             try:
@@ -48,13 +52,14 @@ class InputSimulator:
             except Exception:
                 pass
 
-    def click_match(self, match: MatchResult, humanize: bool = True):
+    def click_match(self, match: MatchResult, humanize: bool = True, tap_count: int = 2):
         """
         매칭 결과 위치 클릭
 
         Args:
             match: ImageMatcher의 매칭 결과
             humanize: 좌표 랜덤화
+            tap_count: 탭 횟수 (기본 2회 - 인식률 향상)
         """
         if humanize:
             x, y = self.humanizer.humanize_coords(
@@ -66,13 +71,16 @@ class InputSimulator:
 
         hold_ms = self.humanizer.get_hold_duration_ms()
 
-        if hold_ms > 80:
-            self.adb.swipe(x, y, x, y, hold_ms)
-        else:
-            self.adb.tap(x, y)
+        for i in range(tap_count):
+            if hold_ms > 80:
+                self.adb.swipe(x, y, x, y, hold_ms)
+            else:
+                self.adb.tap(x, y)
+            if i < tap_count - 1:
+                time.sleep(0.03)  # 탭 사이 30ms 간격
 
         logger.info(
-            f"매칭 클릭: ({x}, {y}) "
+            f"매칭 클릭: ({x}, {y}) x{tap_count} "
             f"신뢰도: {match.confidence:.3f} 홀드: {hold_ms}ms"
         )
 
